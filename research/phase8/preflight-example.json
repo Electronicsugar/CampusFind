@@ -1,0 +1,16 @@
+{
+  "profile": "researcher-dry-run",
+  "database_env": "CF_DRY_DATABASE_URL",
+  "expected_database": "cf_rehearsal_REPLACE",
+  "expected_user": "cf_rehearsal_app_REPLACE",
+  "expected_host": "127.0.0.1",
+  "expected_port": 5433,
+  "expected_origin": "https://REPLACE.invalid",
+  "origin": "https://REPLACE.invalid",
+  "storage": "C:/CampusFindPrivate/REPLACE/images",
+  "backup": "C:/CampusFindBackups/REPLACE",
+  "proxy_ips": ["127.0.0.1"],
+  "secure_cookie": true,
+  "environment": "production",
+  "worker_mode": "separate"
+}

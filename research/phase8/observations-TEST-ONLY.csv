@@ -1,0 +1,2 @@
+session_code,task_id,device_class,input_method,completion_status,assistance_level,duration_seconds,timing_method,recoverable_error_count,critical_error_count,ai_uncertainty_understood,claim_process_understood,approval_receipt_understood,returned_understood,difficulty_rating,observer_notes_redacted
+S000,U04,desktop,keyboard,assisted,minor_hint,120,estimated,1,0,yes,yes,yes,yes,3,uncertainty

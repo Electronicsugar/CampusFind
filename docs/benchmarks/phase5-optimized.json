@@ -1,0 +1,125 @@
+{
+  "kind": "synthetic infrastructure; not accuracy or real CLIP throughput",
+  "results": [
+    {
+      "reports": 100,
+      "fixture": "96x128 synthetic JPEG, one photo/report; deterministic 512d encoder double",
+      "search": {
+        "samples": 10,
+        "median_ms": 7.81,
+        "p95_ms": 16.57
+      },
+      "search_sql": {
+        "samples": 40,
+        "median_ms": 0.34,
+        "p95_ms": 0.57
+      },
+      "search_queries_per_request": 4.0,
+      "concurrent_search_8_users": {
+        "samples": 32,
+        "median_ms": 58.3,
+        "p95_ms": 138.2
+      },
+      "upload": {
+        "samples": 3,
+        "median_ms": 23.38,
+        "p95_ms": 52.2
+      },
+      "matching": {
+        "seconds": 0.331,
+        "jobs_per_minute": 181.381,
+        "cpu_seconds": 0.172,
+        "peak_process_rss_mb": 127.71,
+        "rss_growth_mb": 3.78,
+        "sql_statements": 17,
+        "sql": {
+          "samples": 17,
+          "median_ms": 0.63,
+          "p95_ms": 21.23
+        },
+        "encoder_calls": 16,
+        "pair_rows": 198
+      }
+    },
+    {
+      "reports": 1000,
+      "fixture": "96x128 synthetic JPEG, one photo/report; deterministic 512d encoder double",
+      "search": {
+        "samples": 10,
+        "median_ms": 11.25,
+        "p95_ms": 24.89
+      },
+      "search_sql": {
+        "samples": 40,
+        "median_ms": 0.58,
+        "p95_ms": 1.41
+      },
+      "search_queries_per_request": 4.0,
+      "concurrent_search_8_users": {
+        "samples": 32,
+        "median_ms": 77.25,
+        "p95_ms": 212.98
+      },
+      "upload": {
+        "samples": 3,
+        "median_ms": 32.63,
+        "p95_ms": 43.58
+      },
+      "matching": {
+        "seconds": 1.811,
+        "jobs_per_minute": 33.128,
+        "cpu_seconds": 1.172,
+        "peak_process_rss_mb": 131.66,
+        "rss_growth_mb": 1.89,
+        "sql_statements": 71,
+        "sql": {
+          "samples": 71,
+          "median_ms": 4.91,
+          "p95_ms": 64.71
+        },
+        "encoder_calls": 16,
+        "pair_rows": 1998
+      }
+    },
+    {
+      "reports": 5000,
+      "fixture": "96x128 synthetic JPEG, one photo/report; deterministic 512d encoder double",
+      "search": {
+        "samples": 10,
+        "median_ms": 11.57,
+        "p95_ms": 20.08
+      },
+      "search_sql": {
+        "samples": 40,
+        "median_ms": 0.67,
+        "p95_ms": 4.1
+      },
+      "search_queries_per_request": 4.0,
+      "concurrent_search_8_users": {
+        "samples": 32,
+        "median_ms": 77.09,
+        "p95_ms": 190.65
+      },
+      "upload": {
+        "samples": 3,
+        "median_ms": 36.22,
+        "p95_ms": 44.58
+      },
+      "matching": {
+        "seconds": 8.441,
+        "jobs_per_minute": 7.108,
+        "cpu_seconds": 5.656,
+        "peak_process_rss_mb": 139.2,
+        "rss_growth_mb": 0.46,
+        "sql_statements": 311,
+        "sql": {
+          "samples": 311,
+          "median_ms": 8.83,
+          "p95_ms": 66.77
+        },
+        "encoder_calls": 16,
+        "pair_rows": 9998
+      }
+    }
+  ]
+}

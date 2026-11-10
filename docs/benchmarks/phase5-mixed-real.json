@@ -1,0 +1,30 @@
+{
+  "reports": 100,
+  "lost": 50,
+  "found": 50,
+  "unique_photos": 100,
+  "photo_size": "1024x768 synthetic texture",
+  "encoder": "real existing CLIP",
+  "queue_jobs": 100,
+  "queue_seconds": 13.432,
+  "jobs_per_minute": 446.68,
+  "job_latency": {
+    "samples": 100,
+    "median_ms": 33.45,
+    "p95_ms": 44.19
+  },
+  "concurrent_search_8_users_64_requests": {
+    "samples": 64,
+    "median_ms": 61.76,
+    "p95_ms": 149.95
+  },
+  "two_photo_upload": {
+    "samples": 3,
+    "median_ms": 66.08,
+    "p95_ms": 74.17
+  },
+  "directed_pair_rows": 5000,
+  "cpu_seconds_including_uploads": 26.172,
+  "peak_worker_process_rss_mb": 505.59,
+  "accuracy": "not evaluated"
+}

@@ -1,0 +1,90 @@
+{
+  "split": "development-smoke",
+  "images": [
+    {
+      "id": "distant-case",
+      "path": "data/samples/case-distant.jpg",
+      "prompt": "earbud charging case.",
+      "boxes": [
+        [
+          0.278,
+          0.41,
+          0.582,
+          0.572
+        ]
+      ]
+    },
+    {
+      "id": "close-case",
+      "path": "data/samples/case-close.jpg",
+      "prompt": "earbud charging case.",
+      "boxes": [
+        [
+          0.213,
+          0.422,
+          0.739,
+          0.741
+        ]
+      ]
+    },
+    {
+      "id": "query-case",
+      "path": "data/samples/case-query.jpg",
+      "prompt": "earbud charging case.",
+      "boxes": [
+        [
+          0.093,
+          0.183,
+          0.75,
+          0.818
+        ]
+      ]
+    },
+    {
+      "id": "white-case",
+      "path": "data/samples/white-case.jpg",
+      "prompt": "earbud charging case.",
+      "boxes": [
+        [
+          0.25,
+          0.347,
+          0.683,
+          0.716
+        ]
+      ]
+    },
+    {
+      "id": "silver-case",
+      "path": "data/samples/silver-oneplus.webp",
+      "prompt": "earbud charging case.",
+      "boxes": [
+        [
+          0.087,
+          0.46,
+          0.918,
+          0.914
+        ]
+      ]
+    },
+    {
+      "id": "black-case",
+      "path": "data/samples/black-oneplus.webp",
+      "prompt": "earbud charging case.",
+      "boxes": [
+        [
+          0.168,
+          0.459,
+          0.839,
+          0.969
+        ]
+      ]
+    },
+    {
+      "id": "chart",
+      "path": "data/samples/graph-negative.png",
+      "prompt": "earbud charging case.",
+      "boxes": []
+    }
+  ],
+  "annotation_note": "Approximate case-only boxes manually marked from visual inspection on 21 October 2026, before Grounding DINO inference. Not independently reviewed or held out. Earbuds outside the case are not targets. IoU metric is localization only, independent of predicted class."
+}

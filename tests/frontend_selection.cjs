@@ -1,0 +1,62 @@
+﻿const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const elements=new Map();
+function element(){return {disabled:false,hidden:false,children:[],style:{},value:'',setAttribute(){},showModal(){this.open=true},close(){this.open=false},append(...els){this.children.push(...els)},replaceChildren(){this.children=[]},getContext(){return {drawImage(){},strokeRect(){}}},toDataURL(){return 'data:image/jpeg;base64,crop'},scrollIntoView(){}}}
+const document={getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id)},createElement:element,querySelectorAll(){return []}};
+const context=vm.createContext({document,console,URL:{},Image:function(){},setTimeout,clearTimeout,AbortController});
+vm.runInContext(fs.readFileSync('frontend/gallery.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1],context);
+vm.runInContext(fs.readFileSync('frontend/detection.js','utf8'),context);
+vm.runInContext("query={file:{name:'query.jpg'},img:{naturalWidth:1000,naturalHeight:1000},url:'local',confirmed:false,box:null};items=[{file:{name:'candidate.jpg'},url:'candidate',confirmed:true}];active=query;controls()",context);
+assert.equal(elements.get('search').disabled,true,'Unreviewed reference must not search');
+vm.runInContext('setBox([.2,.2,.8,.8])',context);
+assert.equal(elements.get('search').disabled,false);
+assert.equal(elements.get('queryThumb').src,'data:image/jpeg;base64,crop');
+vm.runInContext('setBox(null)',context);
+assert.equal(elements.get('search').disabled,true,'Cancelled crop cannot silently use full image');
+vm.runInContext('setBox(null,true)',context);
+assert.equal(elements.get('search').disabled,false,'Explicit full-frame choice remains available');
+assert.equal(elements.get('queryThumb').src,'local');
+vm.runInContext("items[0].confirmed=false;controls()",context);
+assert.equal(elements.get('search').disabled,true,'Unreviewed candidates must not search');
+vm.runInContext("items[0].confirmed=true;active.proposals=[{box:[.1,.2,.7,.8],label:'case'}];renderSuggestions()",context);
+elements.get('suggestions').children[0].onclick();
+assert.equal(vm.runInContext('query.box',context),null,'Preview must not alter accepted crop');
+assert.equal(elements.get('acceptSuggestion').hidden,false);
+elements.get('rejectSuggestion').onclick();
+assert.equal(vm.runInContext('query.box',context),null,'Reject must preserve prior full frame choice');
+vm.runInContext("active.proposals=[{box:[.1,.2,.7,.8],label:'case'},{box:[.3,.3,.9,.9],label:'phone'}];renderSuggestions()",context);
+elements.get('suggestions').children[1].onclick();
+elements.get('acceptSuggestion').onclick();
+assert.deepEqual(Array.from(vm.runInContext('query.box',context)),[.3,.3,.9,.9]);
+assert.equal(vm.runInContext('query.confirmed',context),true);
+assert.equal(elements.get('search').disabled,false);
+console.log('Reference/candidate confirmation, draft preview, multiple choice, reject and acceptance checks passed');
+
+(async()=>{
+  let submitted;
+  context.FormData=class {constructor(){this.fields={}}append(key,value){this.fields[key]=value}};
+  context.fetch=async(url,options)=>{
+    assert.equal(url,'/api/suggest-crops');submitted=options.body.fields;
+    return {ok:true,json:async()=>({model:'nanodet',proposals:[{box:[.1,.1,.9,.9],label:'region'}],elapsed_ms:20,note:'Review the box.'})};
+  };
+  vm.runInContext("$('objectHint').value='case';$('detectorModel').value='nanodet'",context);
+  await vm.runInContext("$('suggest').onclick()",context);
+  assert.equal(submitted.model,'nanodet');
+  assert.deepEqual(Array.from(vm.runInContext('query.box',context)),[.3,.3,.9,.9],'Inference must not apply a proposal');
+  assert.equal(vm.runInContext('query.draft',context),null,'Inference must not preselect a draft');
+  assert.equal(vm.runInContext('busy',context),false);
+  context.fetch=async()=>({ok:false,json:async()=>({detail:'Detector unavailable; crop manually.'})});
+  await vm.runInContext("$('suggest').onclick()",context);
+  assert.match(elements.get('status').textContent,/unavailable/);
+  assert.equal(elements.get('search').disabled,false,'Detection failure must preserve accepted selections');
+  assert.equal(vm.runInContext('busy',context),false);
+  console.log('Async suggestion response, explicit model submission and failure recovery checks passed');
+})().catch(error=>{console.error(error);process.exitCode=1});
+
+vm.runInContext("openComparison({preview:'candidate-crop',name:'<script>literal name</script>'})",context);
+assert.equal(elements.get('comparison').open,true);
+assert.equal(elements.get('compareReference').src,elements.get('queryThumb').src);
+assert.equal(elements.get('compareCandidate').src,'candidate-crop');
+assert.equal(elements.get('compareName').textContent,'<script>literal name</script>');
+elements.get('closeComparison').onclick();
+assert.equal(elements.get('comparison').open,false);
+console.log('Side-by-side comparison preserves selected crops and treats filenames as text');

@@ -1,0 +1,9 @@
+{
+  "restored_reports": 1,
+  "restored_photos": 2,
+  "private_evidence_preserved": true,
+  "corruption_rejected": true,
+  "disposable_databases_removed": true,
+  "seconds": 3.302,
+  "scope": "synthetic fixture; not a backup of real user data"
+}

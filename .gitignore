@@ -1,0 +1,33 @@
+﻿.venv/
+.tmp/
+__pycache__/
+.pytest_cache/
+reports/*
+!reports/.gitkeep
+data/samples/*
+!data/samples/.gitkeep
+.env
+
+models/
+.local/
+.env.*
+!.env.example
+backups/
+*.dump
+*.pgpass
+
+# Local credentials, database copies and operational output
+.git-credentials
+.vercel/
+*.log
+*.db
+*.sqlite
+*.sqlite3
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Uploaded reference document; source publication includes code/documentation only
+docs/research-paper.pdf
+

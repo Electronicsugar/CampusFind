@@ -1,0 +1,103 @@
+{
+  "schema_version": 3,
+  "dataset_version": "TEST ONLY illustration, missing photographs",
+  "split": "development",
+  "images": [
+    {
+      "id": "TEST-0",
+      "path": "photos/development/TEST-0.jpg",
+      "instance_id": "TEST-A",
+      "product_model_id": "TEST-model",
+      "report_id": "TEST-report-0",
+      "role": "query",
+      "capture_session_id": "TEST-session-0",
+      "source_asset_id": "TEST-asset-0",
+      "label_provenance": "TEST ONLY illustration; replace with verified custody log",
+      "metadata": {
+        "category": "bottle"
+      },
+      "capture": {
+        "viewpoint": "front",
+        "lighting": "diffuse",
+        "background": "plain",
+        "distance": "near",
+        "occlusion": "none"
+      },
+      "selection_confirmed": true
+    },
+    {
+      "id": "TEST-1",
+      "path": "photos/development/TEST-1.jpg",
+      "instance_id": "TEST-A",
+      "product_model_id": "TEST-model",
+      "report_id": "TEST-report-1",
+      "role": "gallery",
+      "capture_session_id": "TEST-session-1",
+      "source_asset_id": "TEST-asset-1",
+      "label_provenance": "TEST ONLY illustration; replace with verified custody log",
+      "metadata": {
+        "category": "bottle"
+      },
+      "capture": {
+        "viewpoint": "front",
+        "lighting": "diffuse",
+        "background": "plain",
+        "distance": "near",
+        "occlusion": "none"
+      },
+      "selection_confirmed": true
+    },
+    {
+      "id": "TEST-2",
+      "path": "photos/development/TEST-2.jpg",
+      "instance_id": "TEST-B",
+      "product_model_id": "TEST-model",
+      "report_id": "TEST-report-2",
+      "role": "gallery",
+      "capture_session_id": "TEST-session-2",
+      "source_asset_id": "TEST-asset-2",
+      "label_provenance": "TEST ONLY illustration; replace with verified custody log",
+      "metadata": {
+        "category": "bottle"
+      },
+      "capture": {
+        "viewpoint": "front",
+        "lighting": "diffuse",
+        "background": "plain",
+        "distance": "near",
+        "occlusion": "none"
+      },
+      "selection_confirmed": true
+    }
+  ],
+  "queries": [
+    {
+      "id": "TEST-present",
+      "image_id": "TEST-0",
+      "gallery_ids": [
+        "TEST-1",
+        "TEST-2"
+      ],
+      "positive_ids": [
+        "TEST-1"
+      ],
+      "relations": {
+        "TEST-1": "same_instance",
+        "TEST-2": "lookalike"
+      },
+      "no_match": false
+    },
+    {
+      "id": "TEST-absent",
+      "image_id": "TEST-0",
+      "gallery_ids": [
+        "TEST-2"
+      ],
+      "positive_ids": [],
+      "relations": {
+        "TEST-2": "lookalike"
+      },
+      "no_match": true
+    }
+  ]
+}

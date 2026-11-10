@@ -1,0 +1,291 @@
+{
+  "split": "development",
+  "label_provenance": "Same Realme physical instance reported by user in prior chat; not independently verified. Product images are different-model lookalikes. Case boxes approximate agent annotations. Detector proposal indices reviewed in Phase 1; manual fallback explicitly recorded. No IoU-based automatic proposal selection.",
+  "known_gaps": [
+    "independent_instances",
+    "same_model_different_physical_instances",
+    "multiple_lost_item_categories",
+    "independently_reviewed_labels"
+  ],
+  "images": [
+    {
+      "id": "distant-case",
+      "path": "data/samples/case-distant.jpg",
+      "instance_id": "user-reported-realme-1",
+      "manual_box": [
+        0.278,
+        0.41,
+        0.582,
+        0.572
+      ],
+      "detector_review": {
+        "decision": "accept",
+        "proposal_index": 2,
+        "box": [
+          0.278032627482809,
+          0.40905521618987434,
+          0.5807747931142401,
+          0.5734315877654825
+        ]
+      }
+    },
+    {
+      "id": "close-case",
+      "path": "data/samples/case-close.jpg",
+      "instance_id": "user-reported-realme-1",
+      "manual_box": [
+        0.213,
+        0.422,
+        0.739,
+        0.741
+      ],
+      "detector_review": {
+        "decision": "accept",
+        "proposal_index": 0,
+        "box": [
+          0.21850712132483097,
+          0.42199550136270914,
+          0.7337768826680706,
+          0.7324138245810621
+        ]
+      }
+    },
+    {
+      "id": "query-case",
+      "path": "data/samples/case-query.jpg",
+      "instance_id": "user-reported-realme-1",
+      "manual_box": [
+        0.093,
+        0.183,
+        0.75,
+        0.818
+      ],
+      "detector_review": {
+        "decision": "accept",
+        "proposal_index": 0,
+        "box": [
+          0.075770773586835,
+          0.053418264049105345,
+          0.7648588971642312,
+          0.799934424617095
+        ]
+      }
+    },
+    {
+      "id": "white-case",
+      "path": "data/samples/white-case.jpg",
+      "instance_id": null,
+      "manual_box": [
+        0.25,
+        0.347,
+        0.683,
+        0.716
+      ],
+      "detector_review": {
+        "decision": "manual_fallback",
+        "reason": "No usable case region in prior NanoDet proposals"
+      }
+    },
+    {
+      "id": "silver-case",
+      "path": "data/samples/silver-oneplus.webp",
+      "instance_id": null,
+      "manual_box": [
+        0.087,
+        0.46,
+        0.918,
+        0.914
+      ],
+      "detector_review": {
+        "decision": "accept",
+        "proposal_index": 0,
+        "box": [
+          0.07628949496369714,
+          0.3004111307314955,
+          0.9129315247842803,
+          0.9068360663681793
+        ]
+      }
+    },
+    {
+      "id": "black-case",
+      "path": "data/samples/black-oneplus.webp",
+      "instance_id": null,
+      "manual_box": [
+        0.168,
+        0.459,
+        0.839,
+        0.969
+      ],
+      "detector_review": {
+        "decision": "manual_fallback",
+        "reason": "No usable case region in prior NanoDet proposals"
+      }
+    },
+    {
+      "id": "chart",
+      "path": "data/samples/graph-negative.png",
+      "instance_id": null,
+      "manual_box": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "detector_review": {
+        "decision": "full_frame",
+        "reason": "non-item chart"
+      }
+    }
+  ],
+  "queries": [
+    {
+      "id": "distant-case-present",
+      "image_id": "distant-case",
+      "gallery_ids": [
+        "white-case",
+        "silver-case",
+        "black-case",
+        "close-case",
+        "chart"
+      ],
+      "positive_ids": [
+        "close-case"
+      ],
+      "relations": {
+        "white-case": "lookalike",
+        "silver-case": "lookalike",
+        "black-case": "lookalike",
+        "close-case": "same_instance",
+        "chart": "unrelated"
+      },
+      "conditions": [
+        "small_object",
+        "low_light",
+        "view_angle",
+        "background_change"
+      ]
+    },
+    {
+      "id": "distant-case-absent",
+      "image_id": "distant-case",
+      "gallery_ids": [
+        "white-case",
+        "silver-case",
+        "black-case",
+        "chart"
+      ],
+      "positive_ids": [],
+      "relations": {
+        "white-case": "lookalike",
+        "silver-case": "lookalike",
+        "black-case": "lookalike",
+        "chart": "unrelated"
+      },
+      "conditions": [
+        "small_object",
+        "low_light",
+        "view_angle",
+        "background_change",
+        "no_match"
+      ]
+    },
+    {
+      "id": "query-case-present",
+      "image_id": "query-case",
+      "gallery_ids": [
+        "white-case",
+        "silver-case",
+        "black-case",
+        "close-case",
+        "chart"
+      ],
+      "positive_ids": [
+        "close-case"
+      ],
+      "relations": {
+        "white-case": "lookalike",
+        "silver-case": "lookalike",
+        "black-case": "lookalike",
+        "close-case": "same_instance",
+        "chart": "unrelated"
+      },
+      "conditions": [
+        "view_angle",
+        "low_light"
+      ]
+    },
+    {
+      "id": "query-case-absent",
+      "image_id": "query-case",
+      "gallery_ids": [
+        "white-case",
+        "silver-case",
+        "black-case",
+        "chart"
+      ],
+      "positive_ids": [],
+      "relations": {
+        "white-case": "lookalike",
+        "silver-case": "lookalike",
+        "black-case": "lookalike",
+        "chart": "unrelated"
+      },
+      "conditions": [
+        "view_angle",
+        "low_light",
+        "no_match"
+      ]
+    },
+    {
+      "id": "close-case-present",
+      "image_id": "close-case",
+      "gallery_ids": [
+        "white-case",
+        "silver-case",
+        "black-case",
+        "distant-case",
+        "chart"
+      ],
+      "positive_ids": [
+        "distant-case"
+      ],
+      "relations": {
+        "white-case": "lookalike",
+        "silver-case": "lookalike",
+        "black-case": "lookalike",
+        "distant-case": "same_instance",
+        "chart": "unrelated"
+      },
+      "conditions": [
+        "view_angle",
+        "scale_change",
+        "background_change"
+      ]
+    },
+    {
+      "id": "close-case-absent",
+      "image_id": "close-case",
+      "gallery_ids": [
+        "white-case",
+        "silver-case",
+        "black-case",
+        "chart"
+      ],
+      "positive_ids": [],
+      "relations": {
+        "white-case": "lookalike",
+        "silver-case": "lookalike",
+        "black-case": "lookalike",
+        "chart": "unrelated"
+      },
+      "conditions": [
+        "view_angle",
+        "scale_change",
+        "background_change",
+        "no_match"
+      ]
+    }
+  ],
+  "detector_review_provenance": "Phase 1 NanoDet proposal regions reviewed in development; accepted index and box are frozen. Changing proposal geometry requires a new explicit review, not oracle overlap selection."
+}

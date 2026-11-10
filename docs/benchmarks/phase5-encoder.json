@@ -1,0 +1,16 @@
+{
+  "scope": "20 unique synthetic 1024x768 frames, real cached local CLIP, no accuracy labels",
+  "model_load_seconds": 1.375,
+  "cold_encoding": {
+    "samples": 20,
+    "median_ms": 69.71,
+    "p95_ms": 82.73
+  },
+  "memory_cache_hits": {
+    "samples": 20,
+    "median_ms": 2.01,
+    "p95_ms": 2.22
+  },
+  "cpu_seconds": 6.344,
+  "peak_process_rss_mb": 390.2
+}

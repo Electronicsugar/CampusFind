@@ -1,0 +1,6 @@
+{
+  "split": "independent",
+  "label_provenance": "No independent labeled dataset provided. Empty deliberately; development photos must not be copied here.",
+  "images": [],
+  "queries": []
+}
