@@ -105,7 +105,7 @@ def install(app,settings=None):
     @app.get('/api/v1/options')
     def options():
         from backend.settings import campus_today
-        return {'retention_days':app.state.settings.retention_days,'today':campus_today().isoformat(),'registration_open':app.state.settings.environment!='production'}
+        return {'retention_days':app.state.settings.retention_days,'today':campus_today().isoformat(),'registration_open':app.state.settings.registration_open}
 
     @app.get('/assets/{name}')
     def asset(name:str):

@@ -25,10 +25,28 @@ database password. Do not commit or share the private runtime/operator JSON file
 The previous local development database and reports are separate. The public demo
 uses seven-day photo retention. No existing private photos were copied to it.
 
-Production account protections remain enabled: public self-registration is closed.
-No administrator was created (owner's choice). Operator-issued accounts are
-required before using authenticated report/claim features. Do not use the default
-development `.env` when issuing accounts to this separate public instance.
+Public demo self-registration is explicitly enabled with
+`CAMPUSFIND_PUBLIC_REGISTRATION=true`. Other production instances remain closed
+unless they opt in. Signup does not verify email ownership or campus affiliation.
+No administrator was created (owner's choice). HTTPS, Secure sessions, CSRF
+protection and shared throttling remain enabled.
+
+New accounts and password resets require 6–12 characters, including at least one
+letter and one number. Existing passwords remain valid for login.
+
+Signup shows eight private recovery codes once, with a download and save
+acknowledgment. Store them securely outside CampusFind. **Forgot your password?**
+on the login page accepts your email, one saved code and a new password. A reset
+revokes all sessions and replaces the entire recovery-code set; save the new set
+before logging in. Only SHA-256 hashes of random 128-bit codes are stored in the
+database. Codes remain valid until replaced or used; using one invalidates all
+other codes in that set. Never include codes in reports or screenshots.
+
+Already signed in? Profile lets you generate replacement codes after confirming
+your current password. Existing accounts need to do this once to enable recovery.
+There is no email delivery service or email reset flow. If you have forgotten the
+password and have no saved code, automated recovery is unavailable; contact the
+operator. An email address alone is not proof of account ownership.
 
 `CAMPUSFIND_BACKEND_URL` in Vercel is an HTTPS origin, not a database credential.
 The frontend build copies only allowlisted static assets. When the backend address
@@ -39,6 +57,14 @@ Verified on 23 November 2026: public homepage/options/readiness, HTTPS session,
 generated-photo report upload, authenticated image access and a real worker match
 completed successfully; synthetic reports were deleted and test accounts disabled.
 This is deployment functionality evidence, not recognition-accuracy validation.
+
+Account-access update verified on 23 November 2026: public signup, recovery-code
+replacement, password reset, session revocation, replay rejection and login with
+the new password passed through the public HTTPS URL. The synthetic test account
+was disabled afterwards. Automated checks: 175 Python tests passed (4 skipped),
+73 PostgreSQL tests passed, and all six frontend check scripts passed, including
+the signup/recovery flow. A verified private backup preceded migration
+`0004_account_recovery`. Production matching behavior is unchanged.
 
 ## Current milestone: Phase VI recognition experiments
 

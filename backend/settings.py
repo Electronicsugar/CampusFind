@@ -35,6 +35,11 @@ class Settings:
     background_matching: bool=True
     environment: str='development'
     trusted_hosts: tuple=()
+    public_registration: bool=False
+
+    @property
+    def registration_open(self):
+        return self.environment!='production' or self.public_registration
 
     @classmethod
     def from_env(cls):
@@ -61,5 +66,5 @@ class Settings:
         campus_today()  # Fail early for an invalid configured IANA timezone.
         return cls(database_url=os.getenv('DATABASE_URL',''),storage=Path(os.getenv('CAMPUSFIND_STORAGE',str(ROOT/'.local'/'private-images'))).resolve(),
                    origin=origin,secure_cookie=secure,retention_days=retention,environment=environment,
-                   trusted_hosts=trusted_hosts,background_matching=environment!='production' and os.getenv('CAMPUSFIND_BACKGROUND_MATCHING','true')=='true',
+                   trusted_hosts=trusted_hosts,public_registration=os.getenv('CAMPUSFIND_PUBLIC_REGISTRATION','false')=='true',background_matching=environment!='production' and os.getenv('CAMPUSFIND_BACKGROUND_MATCHING','true')=='true',
                    domains=tuple(x.strip().lower() for x in os.getenv('CAMPUSFIND_EMAIL_DOMAINS','').split(',') if x.strip()))

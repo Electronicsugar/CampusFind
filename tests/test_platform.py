@@ -16,7 +16,7 @@ from backend.platform import create_app
 from backend.settings import Settings
 from backend.models import User,Session,Item,ItemImage,ClaimRequest,MatchJob,MatchSuggestion,ModerationRecord,now
 
-PASSWORD='A long synthetic password 123!'
+PASSWORD='Test123456!'
 
 
 def test_presentation_assets_are_available_without_private_data(app):

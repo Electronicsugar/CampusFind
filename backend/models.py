@@ -31,6 +31,13 @@ class Session(Base):
     created_at:Mapped[datetime]=mapped_column(DateTime,default=now)
 
 
+class RecoveryCode(Base):
+    __tablename__='recovery_codes'
+    code_hash:Mapped[str]=mapped_column(String(64),primary_key=True)
+    user_id:Mapped[str]=mapped_column(ForeignKey('users.id',ondelete='CASCADE'),index=True)
+    created_at:Mapped[datetime]=mapped_column(DateTime,default=now)
+
+
 class Item(Base):
     __tablename__='items'
     id:Mapped[str]=mapped_column(String(36),primary_key=True,default=uid)

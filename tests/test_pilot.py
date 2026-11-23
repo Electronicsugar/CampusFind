@@ -119,7 +119,7 @@ def test_readiness_metrics_and_fail_closed_registration(app):
     assert c.get('/health/ready').status_code==503
     from backend.worker import heartbeat
     heartbeat(app.state.sessions,'idle');assert c.get('/health/ready').status_code==200
-    assert c.post('/api/v1/auth/register',json={'email':'new@example.edu','password':'A safe synthetic password!','display_name':'Synthetic'}).status_code==403
+    assert c.post('/api/v1/auth/register',json={'email':'new@example.edu','password':'Test123456!','display_name':'Synthetic'}).status_code==403
 
 
 def test_production_configuration_rejects_unsafe_origin(monkeypatch,tmp_path):

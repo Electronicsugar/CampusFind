@@ -12,7 +12,7 @@ from pydantic import BaseModel,Field,ConfigDict,field_validator
 from sqlalchemy import select,delete
 from sqlalchemy.exc import IntegrityError
 from backend.database import get_db
-from backend.models import User,Session,RateLimit,ModerationRecord,now
+from backend.models import User,Session,RecoveryCode,RateLimit,ModerationRecord,now
 
 router=APIRouter(prefix='/api/v1/auth',tags=['accounts'])
 hasher=PasswordHasher(time_cost=3,memory_cost=65536,parallelism=2)
@@ -82,7 +82,7 @@ def user_view(user):return {'id':user.id,'display_name':user.display_name,'email
 class Credentials(BaseModel):
     model_config=ConfigDict(extra='forbid')
     email:str=Field(min_length=3,max_length=254)
-    password:str=Field(min_length=12,max_length=128)
+    password:str=Field(min_length=6,max_length=128)
     @field_validator('email')
     @classmethod
     def email_format(cls,value):
@@ -92,7 +92,18 @@ class Credentials(BaseModel):
         return value
 
 
-class Registration(Credentials):
+class NewPassword(Credentials):
+    password:str=Field(min_length=6,max_length=12)
+
+    @field_validator('password')
+    @classmethod
+    def password_mix(cls,value):
+        if not re.search(r'[A-Za-z]',value) or not re.search(r'[0-9]',value):
+            raise ValueError('Use 6–12 characters with at least one letter and one number.')
+        return value
+
+
+class Registration(NewPassword):
     display_name:str=Field(min_length=2,max_length=80)
     @field_validator('display_name')
     @classmethod
@@ -116,10 +127,7 @@ def new_session(request,response,db,user):
 def register(data:Registration,request:Request,response:Response,db=Depends(get_db)):
     origin_check(request);throttle(request,'register',request.client.host,10,3600)
     settings=request.app.state.settings
-    if settings.environment=='production':
-        # Open signup is disabled until institutional identity verification exists.
-        # The operator must pre-provision pilot accounts; email allowlists alone
-        # do not prove control of that email address.
+    if not settings.registration_open:
         raise HTTPException(403,'Pilot accounts are issued by the campus coordinator.')
     domains=request.app.state.settings.domains
     if domains and data.email.rsplit('@',1)[1] not in domains:raise HTTPException(400,'Use an allowed campus email domain.')
@@ -129,18 +137,72 @@ def register(data:Registration,request:Request,response:Response,db=Depends(get_
     except IntegrityError:
         db.rollback();raise HTTPException(409,'Registration could not be completed. Try logging in with this email.') from None
     db.add(ModerationRecord(actor_id=user.id,action='account_registered'))
-    return new_session(request,response,db,user)
+    codes=replace_recovery_codes(db,user)
+    return {**new_session(request,response,db,user),'recovery_codes':codes}
 
 
 @router.post('/login')
 def login(data:Credentials,request:Request,response:Response,db=Depends(get_db)):
     origin_check(request);throttle(request,'login_ip',request.client.host,30,600)
     throttle(request,'login_account',data.email,10,600)
-    user=db.scalar(select(User).where(User.email==data.email))
+    # Serialize password verification/session creation with password recovery.
+    user=db.scalar(select(User).where(User.email==data.email).with_for_update())
     valid=verify_password(user.password_hash if user else DUMMY_HASH,data.password)
     if not valid or not user or not user.active:raise HTTPException(401,'Email or password is incorrect.')
     if hasher.check_needs_rehash(user.password_hash):user.password_hash=hash_password(data.password)
     return new_session(request,response,db,user)
+
+
+def replace_recovery_codes(db,user):
+    """Call with the user row locked (or newly inserted), and commit atomically."""
+    db.execute(delete(RecoveryCode).where(RecoveryCode.user_id==user.id))
+    codes=[]
+    for _ in range(8):
+        raw=secrets.token_hex(16).upper()
+        codes.append('-'.join(raw[i:i+8] for i in range(0,32,8)))
+        db.add(RecoveryCode(user_id=user.id,code_hash=digest('recovery:'+raw)))
+    return codes
+
+
+class PasswordReset(NewPassword):
+    recovery_code:str=Field(min_length=1,max_length=128)
+
+
+class PasswordProof(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    password:str=Field(min_length=6,max_length=128)
+
+
+@router.post('/reset-password')
+def reset_password(data:PasswordReset,request:Request,db=Depends(get_db)):
+    origin_check(request)
+    throttle(request,'recovery_ip',request.client.host,20,3600)
+    throttle(request,'recovery_account',data.email,6,3600)
+    raw=re.sub(r'[-\s]','',data.recovery_code).upper()
+    user=db.scalar(select(User).where(User.email==data.email).with_for_update())
+    code=db.get(RecoveryCode,digest('recovery:'+raw)) if re.fullmatch(r'[0-9A-F]{32}',raw) else None
+    if not user or not user.active or not code or code.user_id!=user.id:
+        raise HTTPException(400,'Email or recovery code is incorrect, or the code is no longer valid.')
+    user.password_hash=hash_password(data.password)
+    db.execute(delete(Session).where(Session.user_id==user.id))
+    codes=replace_recovery_codes(db,user)
+    db.add(ModerationRecord(actor_id=user.id,action='password_recovered'))
+    db.commit()
+    return {'ok':True,'recovery_codes':codes}
+
+
+@router.post('/recovery-codes')
+def recovery_codes(data:PasswordProof,request:Request,auth=Depends(current),db=Depends(get_db)):
+    throttle(request,'recovery_codes',auth[0].id,6,3600)
+    user=db.scalar(select(User).where(User.id==auth[0].id).with_for_update().execution_options(populate_existing=True))
+    # Re-check after acquiring the lock: recovery may have revoked this session.
+    valid_session=db.scalar(select(Session.token_hash).where(Session.token_hash==auth[1].token_hash,Session.expires_at>now()))
+    if not user.active or not valid_session:raise HTTPException(401,'Please log in.')
+    if not verify_password(user.password_hash,data.password):raise HTTPException(400,'Password is incorrect.')
+    codes=replace_recovery_codes(db,user)
+    db.add(ModerationRecord(actor_id=user.id,action='recovery_codes_replaced'))
+    db.commit()
+    return {'recovery_codes':codes}
 
 
 @router.get('/me')
