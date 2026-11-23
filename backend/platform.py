@@ -46,6 +46,8 @@ def install(app,settings=None):
     from backend.matching import router as matching_router
     from backend.admin import router as admin_router
     app.include_router(claims_router);app.include_router(matching_router);app.include_router(admin_router)
+    from backend.visual_search import router as visual_search_router
+    app.include_router(visual_search_router)
     from backend.operations import router as operations_router,observe
     app.include_router(operations_router)
 

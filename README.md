@@ -74,6 +74,58 @@ and offers Retry connection when the backend cannot be reached. All six frontend
 check scripts passed, including outage, retry and explicitly closed signup cases.
 The restart helper preserves the existing Vercel variable's Secret type.
 
+## Search found items before publishing
+
+Choose **Search by Image** in the navigation or **Search found items by image**
+on Browse. The home page's **I Lost Something** starts here too. You can still
+browse by text, location and category first.
+
+1. Sign in and choose one JPEG, PNG or WebP (up to 15 MB / 24 megapixels).
+2. Draw/adjust an object crop, use the NanoDet crop assistant, or explicitly choose
+   the full image. Optionally narrow by category or location/description.
+3. Search existing active found reports. Inspect ranked reports, compare the
+   selected regions side by side, and use the existing private claim workflow
+   when ownership details are convincing.
+4. If nothing looks right, choose **Continue to lost report**. Your photo and
+   crop carry into the draft. Publication still requires reviewing the report.
+
+Search creates no report, notification or claim, and retains no query photo on
+application storage. The browser keeps the photo/results in this tab for return
+navigation, until replaced, logged out, refreshed or closed. Existing found photos
+remain subject to authentication, visibility and retention rules.
+
+`POST /api/v1/found/search-image` requires a session, Origin and CSRF token. It
+accepts multipart `photo`, JSON `selection` (`confirmed: true`, `box`: normalized
+coordinates or `null`), optional `category`, `q`, and `offset`. It searches all
+eligible photos within those filters, ranks by CLIP cosine similarity, keeps the
+best photo per report, and returns 25 reports per page. Category predictions are
+advisory and do not suppress results. No confidence percentages or automatic
+identity/no-match verdicts are returned. Saved-report matching policy is unchanged.
+
+Candidate descriptors reuse the existing content/model/preprocessing/crop cache.
+CPU encoding is serialized with the worker through a PostgreSQL advisory lock;
+concurrent/busy requests receive a retryable response. Searches have a 45-second
+processing budget and 2,000-photo cap. Larger/cold galleries may require narrower
+filters; they fail explicitly instead of returning a silently incomplete ranking.
+The existing local CLIP model is used; no new download is required. Timing and
+candidate counts are returned and logged without query pixels or account details.
+
+This adds a practical retrieval workflow, not Google Lens-level recognition.
+Different views, identical products and missing candidates remain difficult.
+Synthetic tests establish functionality, privacy, cache reuse and pagination;
+they do not demonstrate real-world same-instance accuracy.
+
+Verified on 24 November 2026: 187 general Python tests passed (4 skipped), 85
+PostgreSQL checks passed, and all seven frontend scripts passed. A public HTTPS
+test with the real CLIP encoder retrieved an existing generated found-report
+photo and opened its authenticated report/image without creating a lost report.
+For that one synthetic candidate, first and repeated search processing took
+1,474.3 ms and 3.1 ms; these are functionality/cache observations, not gallery-scale
+latency or recognition-accuracy benchmarks. Generated reports were deleted and
+test accounts disabled. Browser checks confirmed photo selection, explicit full
+image acceptance, a filtered empty result and photo transfer to an unpublished
+lost-report draft.
+
 ## Current milestone: Phase VI recognition experiments
 
 Phase VI adds stricter dataset validation, leakage screening, report-level visual
