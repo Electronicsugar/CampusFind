@@ -43,7 +43,7 @@ foreach ($mode in @('worker','web')) {
     $processes[$mode]=$process.Id
 }
 $processes | ConvertTo-Json | Set-Content (Join-Path $instanceRoot 'processes.json')
-& npx --yes vercel@latest env update CAMPUSFIND_BACKEND_URL --environment production --value $backendUrl --type config --yes --scope code-forge-6dd8
+& npx --yes vercel@latest env update CAMPUSFIND_BACKEND_URL --environment production --value $backendUrl --type secret --yes --scope code-forge-6dd8
 if ($LASTEXITCODE -ne 0) { throw 'Vercel could not update the backend address. Local processes are running; sign in to Vercel before retrying deployment.' }
 & npx --yes vercel@latest deploy --prod --yes --scope code-forge-6dd8
 if ($LASTEXITCODE -ne 0) { throw 'Vercel deployment failed. The local database and files remain intact.' }

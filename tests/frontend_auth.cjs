@@ -9,13 +9,15 @@ const source=fs.readFileSync('frontend/app.js','utf8');vm.runInContext(source.sl
 const run=code=>vm.runInContext(code,context),tick=()=>new Promise(setImmediate);
 const codes=['12345678-ABCDEF12-12345678-ABCDEF12'];
 (async()=>{
-  assert.doesNotMatch(run('authPage(false)'),/href="#register"/);
+  assert.match(run('authPage(false)'),/href="#register"/);
+  run('registrationOpen=false');assert.match(run('authPage(false)'),/Create account/);
+  run('registrationOpen=null');assert.doesNotMatch(run('authPage(false)'),/coordinator/);
   assert.match(run('authPage(false)'),/href="#recover"/);
   run('registrationOpen=true');assert.match(run('authPage(false)'),/href="#register"/);
   assert.match(run('authPage(true)'),/minlength="6" maxlength="12"/);
   assert.match(run('authPage(true)'),/pattern="\(\?=.*\[A-Za-z\]\)/);
   assert.match(run('authPage(false)'),/maxlength="128"/);
-  context.location.hash='#register';await run('render()');
+  response={registration_open:true,retention_days:7};context.location.hash='#register';await run('render()');
   response={user:{id:'test'},csrf:'csrf',recovery_codes:codes};element('authForm').data={email:'test@example.edu',password:'Test123!',display_name:'Test'};
   element('authForm').onsubmit({preventDefault(){},target:element('authForm')});await tick();
   assert.equal(context.location.hash,'recovery-codes');assert.equal(request.url,'/api/v1/auth/register');
@@ -33,5 +35,9 @@ const codes=['12345678-ABCDEF12-12345678-ABCDEF12'];
   assert.equal(run('user'),null);assert.equal(run('recoveryBundle.next'),'login');
   assert(!context.location.hash.includes(codes[0]));
   context.location.hash='#login';await run('render()');assert.equal(run('recoveryBundle'),null);
+  response=null;context.location.hash='#register';await run('render()');
+  assert.match(element('view').innerHTML,/temporarily unavailable/);assert.doesNotMatch(element('view').innerHTML,/coordinator/);
+  response={registration_open:true,retention_days:7};await run('render()');assert.match(element('view').innerHTML,/authForm/);
+  response={registration_open:false};await run('render()');assert.match(element('view').innerHTML,/currently closed/);
   console.log('Signup, recovery-code acknowledgment, reset confirmation, password bounds and ephemeral code handling passed.');
 })().catch(error=>{console.error(error);process.exitCode=1});

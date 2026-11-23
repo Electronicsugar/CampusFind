@@ -66,6 +66,14 @@ was disabled afterwards. Automated checks: 175 Python tests passed (4 skipped),
 the signup/recovery flow. A verified private backup preceded migration
 `0004_account_recovery`. Production matching behavior is unchanged.
 
+24 November follow-up: a failed temporary tunnel returned API 502 responses,
+which the login screen incorrectly interpreted as closed registration. The
+connection was replaced and public signup/recovery rechecked successfully.
+Create account now stays visible; opening signup refreshes registration settings
+and offers Retry connection when the backend cannot be reached. All six frontend
+check scripts passed, including outage, retry and explicitly closed signup cases.
+The restart helper preserves the existing Vercel variable's Secret type.
+
 ## Current milestone: Phase VI recognition experiments
 
 Phase VI adds stricter dataset validation, leakage screening, report-level visual
