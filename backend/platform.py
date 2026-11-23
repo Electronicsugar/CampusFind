@@ -39,7 +39,7 @@ class BodyLimit:
 def install(app,settings=None):
     configure(app,settings);app.add_middleware(BodyLimit)
     if app.state.settings.environment=='production':
-        app.add_middleware(TrustedHostMiddleware,allowed_hosts=[urlsplit(app.state.settings.origin).hostname],www_redirect=False)
+        app.add_middleware(TrustedHostMiddleware,allowed_hosts=[urlsplit(app.state.settings.origin).hostname,*app.state.settings.trusted_hosts],www_redirect=False)
     app.include_router(auth_router);app.include_router(report_router)
     # Feature routers are imported here so schema/auth remain independently testable.
     from backend.claims import router as claims_router

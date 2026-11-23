@@ -34,6 +34,7 @@ class Settings:
     testing: bool=False
     background_matching: bool=True
     environment: str='development'
+    trusted_hosts: tuple=()
 
     @classmethod
     def from_env(cls):
@@ -51,10 +52,14 @@ class Settings:
             raise ValueError('Secure sessions require an HTTPS origin.')
         if environment=='production' and (not secure or not os.getenv('CAMPUSFIND_STORAGE')):
             raise ValueError('Production requires HTTPS, Secure cookies and an explicit private storage directory.')
+        trusted_hosts=tuple(h.strip().lower() for h in os.getenv('CAMPUSFIND_TRUSTED_HOSTS','').split(',') if h.strip())
+        import re
+        if any(not re.fullmatch(r'[a-z0-9]+(?:[.-][a-z0-9]+)*',h) or len(h)>253 for h in trusted_hosts):
+            raise ValueError('Trusted hosts must be explicit hostnames without wildcards, ports or schemes.')
         retention=int(os.getenv('CAMPUSFIND_RETENTION_DAYS','180'))
         if not 1<=retention<=365:raise ValueError('Retention must be between 1 and 365 days.')
         campus_today()  # Fail early for an invalid configured IANA timezone.
         return cls(database_url=os.getenv('DATABASE_URL',''),storage=Path(os.getenv('CAMPUSFIND_STORAGE',str(ROOT/'.local'/'private-images'))).resolve(),
                    origin=origin,secure_cookie=secure,retention_days=retention,environment=environment,
-                   background_matching=environment!='production' and os.getenv('CAMPUSFIND_BACKGROUND_MATCHING','true')=='true',
+                   trusted_hosts=trusted_hosts,background_matching=environment!='production' and os.getenv('CAMPUSFIND_BACKGROUND_MATCHING','true')=='true',
                    domains=tuple(x.strip().lower() for x in os.getenv('CAMPUSFIND_EMAIL_DOMAINS','').split(',') if x.strip()))
