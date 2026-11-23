@@ -31,3 +31,5 @@ backups/
 # Uploaded reference document; source publication includes code/documentation only
 docs/research-paper.pdf
 
+.vercel
+.env*

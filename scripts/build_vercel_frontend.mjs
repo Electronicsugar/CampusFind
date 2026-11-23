@@ -22,10 +22,11 @@ await writeFile(path.join(output,'static/index.html'),home);
 for(const [route,file] of [['gallery','gallery.html'],['lab','index.html']])await writeFile(path.join(output,'static',route+'.html'),await readFile(path.join(root,'frontend',file)));
 await writeFile(path.join(output,'static/backend-unavailable.json'),JSON.stringify({detail:'The public backend is not connected. Please try again after it is started.'}));
 const routes=[
+  {src:'/(.*)',headers:{'X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'same-origin','Permissions-Policy':'camera=(), microphone=(), geolocation=()'},continue:true},
+  {src:'/(?:|index\\.html|app)',headers:{'Content-Security-Policy':"default-src 'self'; img-src 'self' blob: data:; script-src 'self'; style-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"},continue:true},
   {src:'/(api(?:/.*)?|health(?:/.*)?)',dest:backend?backend.replace(/\/$/,'')+'/$1':'/backend-unavailable.json',...(backend?{}:{status:503}),headers:{'Cache-Control':'no-store'}},
   {src:'/(gallery|lab)',dest:'/$1.html'},
   {src:'/app',dest:'/index.html'},
-  {src:'/(.*)',headers:{'X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'same-origin'},continue:true},
   {handle:'filesystem'},
 ];
 await writeFile(path.join(output,'config.json'),JSON.stringify({version:3,routes},null,2));

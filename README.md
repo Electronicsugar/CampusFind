@@ -1,5 +1,45 @@
 # CampusFind — Smart Campus Lost & Found
 
+## Public demonstration
+
+Website: https://campusfind-alpha-nine.vercel.app/
+
+The frontend is on Vercel Hobby. The FastAPI backend, matching worker, separate
+PostgreSQL cluster (loopback port 5434), and private images run on the owner's
+computer. An HTTPS Cloudflare Quick Tunnel connects Vercel to the backend. This
+is a free computer-hosted demonstration, not an always-on cloud deployment.
+The backend stops being available when the computer sleeps, shuts down, loses
+network access, or the tunnel/processes stop. Docker is not required for this setup.
+
+After restarting the computer, run `./start-public.ps1` from this checkout. It reuses
+the isolated database/storage, starts the worker/web/tunnel, updates Vercel with
+the new temporary tunnel address, and redeploys. It requires the existing Vercel
+CLI sign-in. `./start-public.ps1 -Status` checks availability without restarting.
+Partial starts/occupied ports require inspection rather than stopping unknown
+processes. This helper is not an installed Windows service or automatic supervisor.
+
+Private configuration and data are stored outside this OneDrive workspace under
+`%LOCALAPPDATA%/CampusFind/public/<instance-id>/`, with restricted Windows access.
+`.local/public-host-pointer.json` identifies the instance without containing its
+database password. Do not commit or share the private runtime/operator JSON files.
+The previous local development database and reports are separate. The public demo
+uses seven-day photo retention. No existing private photos were copied to it.
+
+Production account protections remain enabled: public self-registration is closed.
+No administrator was created (owner's choice). Operator-issued accounts are
+required before using authenticated report/claim features. Do not use the default
+development `.env` when issuing accounts to this separate public instance.
+
+`CAMPUSFIND_BACKEND_URL` in Vercel is an HTTPS origin, not a database credential.
+The frontend build copies only allowlisted static assets. When the backend address
+is absent it publishes an explicit unavailable notice and API 503 responses.
+No frontend authentication bypass or model/ranking change is introduced.
+
+Verified on 23 November 2026: public homepage/options/readiness, HTTPS session,
+generated-photo report upload, authenticated image access and a real worker match
+completed successfully; synthetic reports were deleted and test accounts disabled.
+This is deployment functionality evidence, not recognition-accuracy validation.
+
 ## Current milestone: Phase VI recognition experiments
 
 Phase VI adds stricter dataset validation, leakage screening, report-level visual
