@@ -72,6 +72,31 @@ def test_private_inactive_lost_expired_and_deleted_reports_never_searchable(app,
     assert search(c,q='Library',category='bottle').json()['total_reports']==1
 
 
+def test_filter_empty_state_distinguishes_existing_gallery_from_absent_reports(app,encoder):
+    c=account(app);item=report(c).json()
+    with app.state.sessions.begin() as db:
+        row=db.get(Item,item['id']);row.category='other';row.title='Hair accessory / black clip';row.location='canteen table'
+    blocked=search(c,category='black hair clip',q='canteen').json()
+    assert blocked['total_reports']==blocked['searched_photos']==0
+    assert blocked['empty_reason']=='filters'
+    assert blocked['available_reports']==blocked['available_photos']==1
+    assert blocked['applied_filters']=={'category':'black hair clip','q':'canteen'}
+    assert encoder.calls==0
+    broad=search(c).json()
+    assert broad['results'][0]['item_id']==item['id'] and broad['empty_reason'] is None
+    proper=search(c,category=' Other ',q=' canteen ').json()
+    assert proper['total_reports']==1 and proper['applied_filters']=={'category':'other','q':'canteen'}
+    assert search(c,q='Hair accessory').json()['total_reports']==1
+
+
+def test_empty_gallery_counts_do_not_expose_hidden_lost_or_deleted_records(app,encoder):
+    c=account(app);found=report(c).json();report(c,kind='LOST')
+    with app.state.sessions.begin() as db:db.get(Item,found['id']).hidden=True
+    result=search(c,q='Library').json()
+    assert result['empty_reason']=='gallery'
+    assert result['available_reports']==result['available_photos']==0
+
+
 @pytest.mark.parametrize('selection',[{'confirmed':False,'box':None},{'confirmed':True,'box':[True,0,1,1]}, {'confirmed':True,'box':[0,0,0,1]}, {'confirmed':True,'box':[float('nan'),0,1,1]},'bad'])
 def test_invalid_selection_is_rejected_before_inference(app,encoder,selection):
     c=account(app);assert search(c,selection=json.dumps(selection)).status_code==400

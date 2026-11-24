@@ -126,6 +126,18 @@ test accounts disabled. Browser checks confirmed photo selection, explicit full
 image acceptance, a filtered empty result and photo transfer to an unpublished
 lost-report draft.
 
+Search-filter correction (24 November): an actual found hair-clip report was
+stored under `other`, but the free-text category input sent a descriptive name
+as an exact category constraint. That excluded the report before image encoding.
+The category dropdown now shares the report form's category choices. The API
+normalizes category case/whitespace and returns applied filters and counts of
+visible active found reports with photos. Filter-empty searches explicitly say
+no images were compared and offer **Search all found reports**, which clears
+both filters and reruns the existing query. Hidden, expired, deleted, lost and
+closed reports remain excluded. The existing user report was retrieved after
+clearing the mismatched category while retaining the location filter; this is a
+retrieval bug reproduction, not independent recognition-accuracy evidence.
+
 ## Current milestone: Phase VI recognition experiments
 
 Phase VI adds stricter dataset validation, leakage screening, report-level visual

@@ -6,7 +6,7 @@ from threading import BoundedSemaphore
 import cv2
 import numpy as np
 from fastapi import APIRouter,Depends,File,Form,HTTPException,Request,UploadFile
-from sqlalchemy import select,or_,text
+from sqlalchemy import select,or_,text,func
 from backend.auth import current,throttle
 from backend.database import get_db
 from backend.models import Item,ItemImage,now
@@ -48,7 +48,10 @@ def search_found(request:Request,photo:UploadFile=File(...),selection:str=Form(.
         if db.bind.dialect.name=='postgresql' and not db.scalar(text('SELECT pg_try_advisory_xact_lock(72439106)')):
             raise HTTPException(429,'The matching worker is busy. Try image search again shortly.',headers={'Retry-After':'5'})
         eligible=[Item.kind=='FOUND',Item.state.in_(ACTIVE),Item.hidden.is_(False),Item.deleted_at.is_(None),Item.expires_at>now()]
-        if category:eligible.append(Item.category==category)
+        available_reports,available_photos=db.execute(select(func.count(func.distinct(Item.id)),func.count(ItemImage.id))
+            .select_from(Item).join(ItemImage,ItemImage.item_id==Item.id).where(*eligible)).one()
+        category=category.strip().lower();q=q.strip()
+        if category:eligible.append(func.lower(Item.category)==category)
         if q:eligible.append(or_(Item.title.icontains(q,autoescape=True),Item.description.icontains(q,autoescape=True),Item.location.icontains(q,autoescape=True)))
         candidates=db.execute(select(ItemImage,Item).join(Item,Item.id==ItemImage.item_id).where(*eligible)
             .order_by(Item.id,ItemImage.position).limit(MAX_GALLERY_PHOTOS+1)).all()
@@ -75,6 +78,9 @@ def search_found(request:Request,photo:UploadFile=File(...),selection:str=Form(.
         LOG.info(json.dumps({'event':'found_image_search','photos':len(candidates),'reports':len(ranked),'elapsed_ms':elapsed}))
         return {'results':ranked[offset:offset+25],'total_reports':len(ranked),'searched_photos':len(candidates),
             'next_offset':offset+25 if len(ranked)>offset+25 else None,'elapsed_ms':elapsed,'model_version':model_version,
+            'available_reports':available_reports,'available_photos':available_photos,
+            'applied_filters':{'category':category,'q':q},
+            'empty_reason':('filters' if available_photos and (category or q) else 'gallery') if not ranked else None,
             'notice':'Ranked visual suggestions, not verified identity. All filtered active found reports were searched. A low-ranked or absent result does not prove your item is absent. Your search photo was not published or saved.'}
     except ModelUnavailable:
         raise HTTPException(503,'Image matching is unavailable. Try later or browse by location and description; nothing was published.') from None
