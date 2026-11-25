@@ -4,6 +4,9 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const output=path.join(root,'.vercel/output');
+const {version}=JSON.parse(await readFile(path.join(root,'app-version.json'),'utf8'));
+const appSource=await readFile(path.join(root,'frontend/app.js'),'utf8');
+if(!appSource.includes("const APP_VERSION='"+version+"'"))throw Error('Frontend and release versions must match.');
 const backend=(process.env.CAMPUSFIND_BACKEND_URL||'').trim();
 if(backend){
   const url=new URL(backend);
@@ -21,7 +24,9 @@ if(!backend){
 await writeFile(path.join(output,'static/index.html'),home);
 for(const [route,file] of [['gallery','gallery.html'],['lab','index.html']])await writeFile(path.join(output,'static',route+'.html'),await readFile(path.join(root,'frontend',file)));
 await writeFile(path.join(output,'static/backend-unavailable.json'),JSON.stringify({detail:'The public backend is not connected. Please try again after it is started.'}));
+await writeFile(path.join(output,'static/app-version.json'),JSON.stringify({version}));
 const routes=[
+  {src:'/(?:|index\\.html|app|app-version\\.json|assets/(?:app\\.js|app-ui\\.js|app\\.css))',headers:{'Cache-Control':'no-store','X-CampusFind-Version':version},continue:true},
   {src:'/(.*)',headers:{'X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'same-origin','Permissions-Policy':'camera=(), microphone=(), geolocation=()'},continue:true},
   {src:'/(?:|index\\.html|app)',headers:{'Content-Security-Policy':"default-src 'self'; img-src 'self' blob: data:; script-src 'self'; style-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"},continue:true},
   {src:'/(api(?:/.*)?|health(?:/.*)?)',dest:backend?backend.replace(/\/$/,'')+'/$1':'/backend-unavailable.json',...(backend?{}:{status:503}),headers:{'Cache-Control':'no-store'}},

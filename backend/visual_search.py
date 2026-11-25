@@ -12,8 +12,9 @@ from backend.database import get_db
 from backend.models import Item,ItemImage,now
 from backend.reports import ACTIVE
 from backend.matching import PreparedCache
-from backend.semantic import get_model,relevance,ModelUnavailable
+from backend.semantic import get_model,ModelUnavailable
 from backend.vision import decode_image,prepare,MAX_BYTES
+from backend.release import APP_VERSION
 
 router=APIRouter(prefix='/api/v1/found',tags=['image search'])
 SEARCH_WORK=BoundedSemaphore(1)
@@ -24,7 +25,7 @@ LOG=logging.getLogger(__name__)
 
 @router.post('/search-image')
 def search_found(request:Request,photo:UploadFile=File(...),selection:str=Form(...),
-                 category:str=Form(''),q:str=Form(''),offset:int=Form(0),
+                 category:str=Form(''),q:str=Form(''),offset:int=Form(0),strict_filters:bool=Form(False),
                  auth=Depends(current),db=Depends(get_db)):
     throttle(request,'image_search',auth[0].id,20,600)
     started=time.perf_counter()
@@ -51,12 +52,14 @@ def search_found(request:Request,photo:UploadFile=File(...),selection:str=Form(.
         available_reports,available_photos=db.execute(select(func.count(func.distinct(Item.id)),func.count(ItemImage.id))
             .select_from(Item).join(ItemImage,ItemImage.item_id==Item.id).where(*eligible)).one()
         category=category.strip().lower();q=q.strip()
-        if category:eligible.append(func.lower(Item.category)==category)
-        if q:eligible.append(or_(Item.title.icontains(q,autoescape=True),Item.description.icontains(q,autoescape=True),Item.location.icontains(q,autoescape=True)))
+        # Broad visual retrieval is the default, including for older clients.
+        # Metadata cannot silently exclude a differently labelled object.
+        if strict_filters and category:eligible.append(func.lower(Item.category)==category)
+        if strict_filters and q:eligible.append(or_(Item.title.icontains(q,autoescape=True),Item.description.icontains(q,autoescape=True),Item.location.icontains(q,autoescape=True)))
         candidates=db.execute(select(ItemImage,Item).join(Item,Item.id==ItemImage.item_id).where(*eligible)
             .order_by(Item.id,ItemImage.position).limit(MAX_GALLERY_PHOTOS+1)).all()
         if len(candidates)>MAX_GALLERY_PHOTOS:
-            raise HTTPException(422,'Too many photos for one CPU search. Narrow the category or location/description filter and retry.')
+            raise HTTPException(422,'Too many photos for one CPU search. Select category/text filters and explicitly enable Limit results to these filters, then retry.')
         results={};model_version=None
         if candidates:
             model=get_model();model_version=model.model_version
@@ -69,19 +72,27 @@ def search_found(request:Request,photo:UploadFile=File(...),selection:str=Form(.
                 if item.id not in results or score>results[item.id]['visual_similarity']:
                     results[item.id]={'item_id':item.id,'image_id':photo_row.id,'title':item.title,'category':item.category,
                         'location':item.location,'event_date':item.event_date.isoformat(),'image_url':f'/api/v1/images/{photo_row.id}',
-                        'crop':photo_row.crop,'visual_similarity':score,'category_note':relevance(reference,description)['relevance_reason']}
+                        'crop':photo_row.crop,'visual_similarity':score,
+                        'category_note':'Ranked by visual resemblance between selected object regions. Compare distinctive marks; similarity does not verify ownership.',
+                        'metadata_matches':{'category':bool(category and item.category.lower()==category),
+                            'text':bool(q and any(q.lower() in value.lower() for value in (item.title,item.description,item.location)))}}
         # Category predictions are advisory; never remove or demote visual hits.
         ranked=sorted(results.values(),key=lambda row:(-row['visual_similarity'],row['item_id']))
         for rank,row in enumerate(ranked,1):row['rank']=rank;row.pop('visual_similarity')
         db.flush()
         elapsed=round((time.perf_counter()-started)*1000,1)
         LOG.info(json.dumps({'event':'found_image_search','photos':len(candidates),'reports':len(ranked),'elapsed_ms':elapsed}))
+        empty_reason=('filters' if available_photos and strict_filters and (category or q) else 'gallery') if not ranked else None
+        notice='Ranked visual suggestions, not verified identity. '+('Only reports matching your explicitly selected filters were searched. ' if strict_filters else 'All active found reports were searched across every category; category and text hints do not exclude or reorder visual results. ')
+        if empty_reason=='filters':notice+=f'Your filters excluded {available_reports} available found reports. Clear the filters and search again; no image comparison ran. '
+        notice+='An absent result does not prove your item is absent. Your search photo was not published or saved.'
+        if request.headers.get('x-campusfind-client')!=APP_VERSION:
+            notice+=' Your open tab is using an older app version. Search still includes all categories by default; reload when convenient to update the controls.'
         return {'results':ranked[offset:offset+25],'total_reports':len(ranked),'searched_photos':len(candidates),
             'next_offset':offset+25 if len(ranked)>offset+25 else None,'elapsed_ms':elapsed,'model_version':model_version,
             'available_reports':available_reports,'available_photos':available_photos,
-            'applied_filters':{'category':category,'q':q},
-            'empty_reason':('filters' if available_photos and (category or q) else 'gallery') if not ranked else None,
-            'notice':'Ranked visual suggestions, not verified identity. All filtered active found reports were searched. A low-ranked or absent result does not prove your item is absent. Your search photo was not published or saved.'}
+            'applied_filters':{'category':category,'q':q},'filter_mode':'strict' if strict_filters else 'hints',
+            'empty_reason':empty_reason,'notice':notice}
     except ModelUnavailable:
         raise HTTPException(503,'Image matching is unavailable. Try later or browse by location and description; nothing was published.') from None
     finally:SEARCH_WORK.release()

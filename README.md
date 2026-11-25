@@ -96,8 +96,8 @@ remain subject to authentication, visibility and retention rules.
 
 `POST /api/v1/found/search-image` requires a session, Origin and CSRF token. It
 accepts multipart `photo`, JSON `selection` (`confirmed: true`, `box`: normalized
-coordinates or `null`), optional `category`, `q`, and `offset`. It searches all
-eligible photos within those filters, ranks by CLIP cosine similarity, keeps the
+coordinates or `null`), optional `category`, `q`, `offset`, and `strict_filters` (default `false`). By default metadata is advisory and it searches all
+eligible found photos across every category, ranks by CLIP cosine similarity, keeps the
 best photo per report, and returns 25 reports per page. Category predictions are
 advisory and do not suppress results. No confidence percentages or automatic
 identity/no-match verdicts are returned. Saved-report matching policy is unchanged.
@@ -106,7 +106,7 @@ Candidate descriptors reuse the existing content/model/preprocessing/crop cache.
 CPU encoding is serialized with the worker through a PostgreSQL advisory lock;
 concurrent/busy requests receive a retryable response. Searches have a 45-second
 processing budget and 2,000-photo cap. Larger/cold galleries may require narrower
-filters; they fail explicitly instead of returning a silently incomplete ranking.
+filters with the explicit Limit results checkbox; they fail explicitly instead of returning a silently incomplete ranking.
 The existing local CLIP model is used; no new download is required. Timing and
 candidate counts are returned and logged without query pixels or account details.
 
@@ -131,12 +131,20 @@ stored under `other`, but the free-text category input sent a descriptive name
 as an exact category constraint. That excluded the report before image encoding.
 The category dropdown now shares the report form's category choices. The API
 normalizes category case/whitespace and returns applied filters and counts of
-visible active found reports with photos. Filter-empty searches explicitly say
+visible active found reports with photos. When the user explicitly enables strict filtering, filter-empty searches explicitly say
 no images were compared and offer **Search all found reports**, which clears
 both filters and reruns the existing query. Hidden, expired, deleted, lost and
 closed reports remain excluded. The existing user report was retrieved after
 clearing the mismatched category while retaining the location filter; this is a
 retrieval bug reproduction, not independent recognition-accuracy evidence.
+
+General retrieval correction (25 November): image search now searches across
+all categories by default. Category/location text are hints; only the explicit
+**Limit results** checkbox narrows candidates. This also fixes older clients
+without a reload. See the [full diagnosis and verification](docs/SEARCH_ROOT_CAUSE_2026_11_25.md).
+Release metadata, version response headers, a safe update notice and no-store
+app-shell headers help distinguish old open tabs from current deployments.
+A user's photos/drafts are never automatically discarded to apply an update.
 
 ## Current milestone: Phase VI recognition experiments
 

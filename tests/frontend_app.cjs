@@ -8,6 +8,9 @@ const source=fs.readFileSync('frontend/app.js','utf8');vm.runInContext(source.sl
   response={ok:true,json:async()=>({ok:true})};
   vm.runInContext("csrf='fixture-csrf'",context);await vm.runInContext("api('/auth/profile',{method:'PATCH',body:{display_name:'Test'}})",context);
   assert.equal(request.options.headers['X-CSRF-Token'],'fixture-csrf');assert.equal(request.options.credentials,'same-origin');
+  assert.equal(request.options.headers['X-CampusFind-Client'],'7.8');
+  status.hidden=true;response={ok:true,headers:{get:()=> 'new-release'},json:async()=>({ok:true})};
+  await vm.runInContext("api('/options')",context);assert.equal(status.hidden,false);
   response=new Error('internal network detail');await assert.rejects(vm.runInContext("api('/items')",context),/Connection interrupted/);
   response={ok:false,json:async()=>{throw Error('proxy HTML')}};await assert.rejects(vm.runInContext("api('/items')",context),/temporarily unavailable/);
   const buttons=[{disabled:false},{disabled:true}],attrs={};const form={querySelectorAll:()=>buttons,getAttribute:k=>attrs[k],setAttribute:(k,v)=>attrs[k]=v};

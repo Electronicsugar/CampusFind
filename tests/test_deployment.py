@@ -2,6 +2,18 @@ import pytest
 from tests.test_platform import app,account
 
 
+def test_app_version_and_revalidation_headers(app):
+    from fastapi.testclient import TestClient
+    from backend.platform import APP_VERSION
+    with TestClient(app) as client:
+        response=client.get('/api/v1/options')
+        assert response.json()['app_version']==APP_VERSION
+        assert response.headers['x-campusfind-version']==APP_VERSION
+        for path in ('/app','/assets/app.js'):
+            response=client.get(path)
+            assert response.status_code==200 and response.headers['cache-control']=='no-store'
+
+
 def test_explicit_proxy_host_keeps_origin_csrf_and_host_boundaries(app):
     from backend.platform import create_app
     from fastapi.testclient import TestClient

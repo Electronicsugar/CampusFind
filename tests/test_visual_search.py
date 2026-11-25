@@ -67,8 +67,8 @@ def test_private_inactive_lost_expired_and_deleted_reports_never_searchable(app,
         db.get(Item,ids[4]).deleted_at=now()
     c=account(app,'seeker@example.edu')
     result=search(c).json();assert [row['item_id'] for row in result['results']]==[ids[5]]
-    assert search(c,category='wallet').json()['results']==[]
-    assert search(c,q='Not the location').json()['total_reports']==0
+    assert search(c,category='wallet',strict_filters='true').json()['results']==[]
+    assert search(c,q='Not the location',strict_filters='true').json()['total_reports']==0
     assert search(c,q='Library',category='bottle').json()['total_reports']==1
 
 
@@ -76,7 +76,7 @@ def test_filter_empty_state_distinguishes_existing_gallery_from_absent_reports(a
     c=account(app);item=report(c).json()
     with app.state.sessions.begin() as db:
         row=db.get(Item,item['id']);row.category='other';row.title='Hair accessory / black clip';row.location='canteen table'
-    blocked=search(c,category='black hair clip',q='canteen').json()
+    blocked=search(c,category='black hair clip',q='canteen',strict_filters='true').json()
     assert blocked['total_reports']==blocked['searched_photos']==0
     assert blocked['empty_reason']=='filters'
     assert blocked['available_reports']==blocked['available_photos']==1
@@ -89,10 +89,30 @@ def test_filter_empty_state_distinguishes_existing_gallery_from_absent_reports(a
     assert search(c,q='Hair accessory').json()['total_reports']==1
 
 
+@pytest.mark.parametrize('category',['hair clip','bottle','OTHER','unknown product 123'])
+def test_default_image_search_never_excludes_reports_for_metadata_hints(app,encoder,category):
+    c=account(app);item=report(c).json()
+    with app.state.sessions.begin() as db:db.get(Item,item['id']).category='other'
+    result=search(c,category=category,q='A different location').json()
+    assert result['total_reports']==result['available_reports']==1
+    assert result['searched_photos']==1 and result['results'][0]['item_id']==item['id']
+    assert result['filter_mode']=='hints' and result['empty_reason'] is None
+    assert result['results'][0]['metadata_matches']['text'] is False
+    assert 'every category' in result['notice']
+
+
+def test_explicit_filters_still_narrow_search_and_explain_zero_comparisons(app,encoder):
+    c=account(app);report(c)
+    result=search(c,category='wallet',strict_filters='true').json()
+    assert result['filter_mode']=='strict' and result['empty_reason']=='filters'
+    assert result['searched_photos']==0 and encoder.calls==0
+    assert 'excluded 1 available found reports' in result['notice']
+
+
 def test_empty_gallery_counts_do_not_expose_hidden_lost_or_deleted_records(app,encoder):
     c=account(app);found=report(c).json();report(c,kind='LOST')
     with app.state.sessions.begin() as db:db.get(Item,found['id']).hidden=True
-    result=search(c,q='Library').json()
+    result=search(c,q='Library',strict_filters='true').json()
     assert result['empty_reason']=='gallery'
     assert result['available_reports']==result['available_photos']==0
 

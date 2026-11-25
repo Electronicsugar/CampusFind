@@ -6,6 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.exception_handlers import request_validation_exception_handler
 from sqlalchemy.exc import SQLAlchemyError
 from backend.database import configure
+from backend.release import APP_VERSION
 from backend.auth import router as auth_router
 from backend.reports import router as report_router
 from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -83,6 +84,9 @@ def install(app,settings=None):
         except SQLAlchemyError:denied=JSONResponse({'detail':'Database unavailable. Please try again.'},status_code=503)
         response=denied if denied is not None else await call_next(request)
         observe(request,response.status_code,perf_counter()-started)
+        response.headers['X-CampusFind-Version']=APP_VERSION
+        if request.url.path in {'/','/app'} or request.url.path.startswith('/assets/'):
+            response.headers['Cache-Control']='no-store'
         response.headers['X-Content-Type-Options']='nosniff';response.headers['X-Frame-Options']='DENY'
         response.headers['Referrer-Policy']='same-origin'
         response.headers['Permissions-Policy']='camera=(), microphone=(), geolocation=()'
@@ -107,7 +111,7 @@ def install(app,settings=None):
     @app.get('/api/v1/options')
     def options():
         from backend.settings import campus_today
-        return {'retention_days':app.state.settings.retention_days,'today':campus_today().isoformat(),'registration_open':app.state.settings.registration_open}
+        return {'retention_days':app.state.settings.retention_days,'today':campus_today().isoformat(),'registration_open':app.state.settings.registration_open,'app_version':APP_VERSION}
 
     @app.get('/assets/{name}')
     def asset(name:str):

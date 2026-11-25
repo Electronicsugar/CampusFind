@@ -8,5 +8,8 @@ assert.equal(build('https://backend.example').status,0);
 assert.doesNotMatch(fs.readFileSync('.vercel/output/static/index.html','utf8'),/backend is not connected/);
 assert.equal(JSON.parse(fs.readFileSync('.vercel/output/config.json')).routes.find(r=>r.src.startsWith('/(api')).dest,'https://backend.example/$1');
 assert(fs.existsSync('.vercel/output/static/detection.js'));
+const release=JSON.parse(fs.readFileSync('app-version.json','utf8')).version;
+assert.equal(JSON.parse(fs.readFileSync('.vercel/output/static/app-version.json')).version,release);
+assert(JSON.parse(fs.readFileSync('.vercel/output/config.json')).routes.some(r=>r.headers?.['Cache-Control']==='no-store'&&r.headers?.['X-CampusFind-Version']===release));
 assert(!fs.existsSync('.vercel/output/static/.env'));
 console.log('Vercel build: explicit offline status, HTTPS proxy validation, allowlisted frontend assets passed.');
