@@ -15,8 +15,30 @@ After restarting the computer, run `./start-public.ps1` from this checkout. It r
 the isolated database/storage, starts the worker/web/tunnel, updates Vercel with
 the new temporary tunnel address, and redeploys. It requires the existing Vercel
 CLI sign-in. `./start-public.ps1 -Status` checks availability without restarting.
-Partial starts/occupied ports require inspection rather than stopping unknown
-processes. This helper is not an installed Windows service or automatic supervisor.
+If the web port is already occupied by the verified CampusFind instance, the
+launcher repairs its public connection instead of creating duplicate servers.
+Unknown listeners are never stopped. This helper also starts one background
+connection-recovery monitor. It is not an installed Windows service and does
+not start automatically after reboot or sign-out.
+
+The monitor checks public readiness every 30 seconds. After two failed checks,
+it verifies the local backend, replaces a failed temporary tunnel, reconnects
+Vercel and verifies public readiness. Transient failures and unsuccessful repairs
+use backoff (up to 15 minutes) and a four-attempt hourly cap to avoid deployment loops. A local backend/database
+failure is reported separately and does not trigger pointless tunnel rotations.
+The repair script waits for the new tunnel address to become reachable and can
+reuse a healthy replacement after a partial Vercel update. Old tunnel processes
+are retired only after successful public verification and only when their exact
+executable and loopback destination belong to this workspace.
+
+Use `./repair-public.ps1` for a one-off connection repair.
+`./start-public.ps1 -StopWatchdog` stops only automatic recovery, leaving the app,
+worker and database running. Logs and process IDs stay in the restricted private
+instance folder. Repair uses a process-local RemoteSigned PowerShell setting for
+these local scripts; no persistent Windows execution policy is changed. The
+monitor requires the existing Vercel CLI sign-in and cannot make a sleeping or
+offline computer publicly available. Temporary free tunnels can still fail;
+automatic recovery reduces manual intervention, not all downtime.
 
 Private configuration and data are stored outside this OneDrive workspace under
 `%LOCALAPPDATA%/CampusFind/public/<instance-id>/`, with restricted Windows access.

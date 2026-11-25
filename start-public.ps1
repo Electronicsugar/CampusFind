@@ -1,16 +1,25 @@
-param([switch]$Status)
+param([switch]$Status,[switch]$StopWatchdog)
 $ErrorActionPreference='Stop'
 Set-Location -LiteralPath $PSScriptRoot
 $pointer=Get-Content '.local/public-host-pointer.json' | ConvertFrom-Json
 $instanceRoot=[IO.Path]::GetFullPath($pointer.directory)
 $allowedRoot=[IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'CampusFind\public'))+[IO.Path]::DirectorySeparatorChar
 if (-not $instanceRoot.StartsWith($allowedRoot,[StringComparison]::OrdinalIgnoreCase) -or (Split-Path $instanceRoot -Leaf) -notmatch '^[a-f0-9]{32}$') { throw 'Unexpected private instance directory; refusing to start.' }
-try {
-    $ready=Invoke-RestMethod ($pointer.origin+'/health/ready') -TimeoutSec 10
-    if ($ready.status -eq 'ready') { Write-Output ('CampusFind is online: '+$pointer.origin); return }
-} catch { }
+. (Join-Path $PSScriptRoot 'scripts\public_watchdog.ps1')
+if ($StopWatchdog) { Stop-PublicWatchdog $PSScriptRoot; return }
+$publicReady=$false
+try { $publicReady=(Invoke-RestMethod ($pointer.origin+'/health/ready') -TimeoutSec 10).status -eq 'ready' } catch { }
+if ($publicReady) {
+    Write-Output ('CampusFind is online: '+$pointer.origin)
+    if (-not $Status) { Start-PublicWatchdog $PSScriptRoot $instanceRoot }
+    return
+}
 if ($Status) { Write-Output 'Public backend is offline. Run this script without -Status to start it.'; return }
-if (Get-NetTCPConnection -LocalPort 8020 -State Listen -ErrorAction SilentlyContinue) { throw 'Port 8020 is occupied. Inspect existing public processes before restarting; nothing was stopped.' }
+if (Get-NetTCPConnection -LocalPort 8020 -State Listen -ErrorAction SilentlyContinue) {
+    & (Join-Path $PSScriptRoot 'repair-public.ps1')
+    Start-PublicWatchdog $PSScriptRoot $instanceRoot
+    return
+}
 $pgctl=Join-Path $PSScriptRoot '.local\postgres\pgsql\bin\pg_ctl.exe'
 $pgdata=Join-Path $instanceRoot 'pgdata'
 & $pgctl -D $pgdata status *> $null
@@ -24,8 +33,11 @@ $tunnel=Start-Process -FilePath $tunnelExe -ArgumentList @('tunnel','--url','htt
 $backendUrl=$null
 for ($attempt=0;$attempt -lt 50;$attempt++) {
     if (Test-Path $tunnelLog) {
-        $match=[regex]::Match((Get-Content $tunnelLog -Raw),'https://[a-z0-9-]+\.trycloudflare\.com')
-        if ($match.Success) { $backendUrl=$match.Value; break }
+        $logText=Get-Content -LiteralPath $tunnelLog -Raw
+        if (-not [string]::IsNullOrEmpty($logText)) {
+            $match=[regex]::Match($logText,'https://[a-z0-9-]+\.trycloudflare\.com')
+            if ($match.Success) { $backendUrl=$match.Value; break }
+        }
     }
     Start-Sleep -Milliseconds 500
 }
@@ -48,3 +60,4 @@ if ($LASTEXITCODE -ne 0) { throw 'Vercel could not update the backend address. L
 & npx --yes vercel@latest deploy --prod --yes --scope code-forge-6dd8
 if ($LASTEXITCODE -ne 0) { throw 'Vercel deployment failed. The local database and files remain intact.' }
 Write-Output ('Public URL: '+$pointer.origin)
+Start-PublicWatchdog $PSScriptRoot $instanceRoot
